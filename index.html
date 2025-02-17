@@ -195,7 +195,7 @@
       return schedule;
     }
 
-    // Update the mortgage options table and save data
+    // Update the mortgage options table and attach checkbox event listeners
     function updateOptionsTable() {
       const tbody = document.querySelector("#optionsTable tbody");
       tbody.innerHTML = "";
@@ -217,6 +217,32 @@
         tbody.appendChild(tr);
       });
       updateLocalStorage();
+      attachCheckboxListeners();
+    }
+
+    // Attach change event listeners to all checkboxes and update their disabled state
+    function attachCheckboxListeners() {
+      document.querySelectorAll('.compare-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateCheckboxesState);
+      });
+      updateCheckboxesState();
+    }
+
+    // Disable unchecked checkboxes if two are selected
+    function updateCheckboxesState() {
+      const checkboxes = document.querySelectorAll('.compare-checkbox');
+      const checkedCount = document.querySelectorAll('.compare-checkbox:checked').length;
+      if (checkedCount >= 2) {
+        checkboxes.forEach(cb => {
+          if (!cb.checked) {
+            cb.disabled = true;
+          }
+        });
+      } else {
+        checkboxes.forEach(cb => {
+          cb.disabled = false;
+        });
+      }
     }
 
     // Handle form submission to add a new mortgage option
@@ -302,7 +328,7 @@
       buildComparisonModal(option1, option2);
     });
 
-    // Build the comparison modal content and display it
+    // Build the comparison modal content and display it with a difference column
     function buildComparisonModal(opt1, opt2) {
       const compareContent = document.getElementById("compareContent");
       compareContent.innerHTML = `
@@ -312,6 +338,7 @@
               <th>Parameter</th>
               <th>Mortgage 1</th>
               <th>Mortgage 2</th>
+              <th>Difference</th>
             </tr>
           </thead>
           <tbody>
@@ -319,41 +346,49 @@
               <td>Home Price</td>
               <td>${formatCurrency(opt1.homePrice)}</td>
               <td>${formatCurrency(opt2.homePrice)}</td>
+              <td>${formatCurrency(opt1.homePrice - opt2.homePrice)}</td>
             </tr>
             <tr>
               <td>Down Payment</td>
               <td>${formatCurrency(opt1.downPayment)}</td>
               <td>${formatCurrency(opt2.downPayment)}</td>
+              <td>${formatCurrency(opt1.downPayment - opt2.downPayment)}</td>
             </tr>
             <tr>
               <td>Loan Amount</td>
               <td>${formatCurrency(opt1.loanAmount)}</td>
               <td>${formatCurrency(opt2.loanAmount)}</td>
+              <td>${formatCurrency(opt1.loanAmount - opt2.loanAmount)}</td>
             </tr>
             <tr>
               <td>Interest Rate (%)</td>
               <td>${opt1.interestRate.toFixed(2)}%</td>
               <td>${opt2.interestRate.toFixed(2)}%</td>
+              <td>${(opt1.interestRate - opt2.interestRate).toFixed(2)}%</td>
             </tr>
             <tr>
               <td>Amortization (Years)</td>
               <td>${opt1.amortization}</td>
               <td>${opt2.amortization}</td>
+              <td>${opt1.amortization - opt2.amortization}</td>
             </tr>
             <tr>
               <td>Monthly Payment</td>
               <td>${formatCurrency(opt1.monthlyPayment)}</td>
               <td>${formatCurrency(opt2.monthlyPayment)}</td>
+              <td>${formatCurrency(opt1.monthlyPayment - opt2.monthlyPayment)}</td>
             </tr>
             <tr>
               <td>Total Payment</td>
               <td>${formatCurrency(opt1.totalPayment)}</td>
               <td>${formatCurrency(opt2.totalPayment)}</td>
+              <td>${formatCurrency(opt1.totalPayment - opt2.totalPayment)}</td>
             </tr>
             <tr>
               <td>Total Interest</td>
               <td>${formatCurrency(opt1.totalInterest)}</td>
               <td>${formatCurrency(opt2.totalInterest)}</td>
+              <td>${formatCurrency(opt1.totalInterest - opt2.totalInterest)}</td>
             </tr>
           </tbody>
         </table>
