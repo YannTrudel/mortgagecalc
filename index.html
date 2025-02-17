@@ -51,10 +51,13 @@
     <div class="card mb-4">
       <div class="card-header">Mortgage Options</div>
       <div class="card-body">
+        <!-- Compare button -->
+        <button id="compareOptions" class="btn btn-primary mb-3">Compare Selected Options</button>
         <div class="table-responsive">
           <table class="table table-bordered" id="optionsTable">
             <thead>
               <tr>
+                <th>Select</th>
                 <th>#</th>
                 <th>Home Price</th>
                 <th>Down Payment</th>
@@ -107,6 +110,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Comparison Modal -->
+    <div class="modal fade" id="compareModal" tabindex="-1" aria-labelledby="compareModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="compareModalLabel">Mortgage Comparison</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="compareContent">
+            <!-- Comparison content will be inserted here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Bootstrap Bundle JS (includes Popper) -->
@@ -116,9 +138,24 @@
     // Array to store mortgage options
     let options = [];
 
+    // Load saved options from localStorage if available
+    if (localStorage.getItem("mortgageOptions")) {
+      try {
+        options = JSON.parse(localStorage.getItem("mortgageOptions"));
+        updateOptionsTable();
+      } catch (e) {
+        console.error("Error loading options from localStorage", e);
+      }
+    }
+
     // Helper function to format numbers as currency
     function formatCurrency(num) {
       return '$' + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+
+    // Save options to localStorage
+    function updateLocalStorage() {
+      localStorage.setItem("mortgageOptions", JSON.stringify(options));
     }
 
     // Calculate monthly payment using the standard mortgage formula
@@ -158,13 +195,14 @@
       return schedule;
     }
 
-    // Update the mortgage options table
+    // Update the mortgage options table and save data
     function updateOptionsTable() {
       const tbody = document.querySelector("#optionsTable tbody");
       tbody.innerHTML = "";
       options.forEach((option, index) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td><input type="checkbox" class="compare-checkbox" data-index="${index}"></td>
           <td>${index + 1}</td>
           <td>${formatCurrency(option.homePrice)}</td>
           <td>${formatCurrency(option.downPayment)}</td>
@@ -178,6 +216,7 @@
         `;
         tbody.appendChild(tr);
       });
+      updateLocalStorage();
     }
 
     // Handle form submission to add a new mortgage option
@@ -217,8 +256,10 @@
 
     // Clear all options
     document.getElementById("clearOptions").addEventListener("click", function() {
-      options = [];
-      updateOptionsTable();
+      if (confirm("Are you sure you want to clear all options?")) {
+        options = [];
+        updateOptionsTable();
+      }
     });
 
     // Show the amortization schedule for a selected mortgage option
@@ -243,9 +284,83 @@
         `;
         tbody.appendChild(tr);
       });
-      // Show the Bootstrap modal
-      var myModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
-      myModal.show();
+      // Show the schedule modal
+      var scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+      scheduleModal.show();
+    }
+
+    // Compare two selected mortgage options
+    document.getElementById("compareOptions").addEventListener("click", function() {
+      const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
+      if (checkboxes.length !== 2) {
+        alert("Please select exactly 2 mortgage options for comparison.");
+        return;
+      }
+      const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+      const option1 = options[indices[0]];
+      const option2 = options[indices[1]];
+      buildComparisonModal(option1, option2);
+    });
+
+    // Build the comparison modal content and display it
+    function buildComparisonModal(opt1, opt2) {
+      const compareContent = document.getElementById("compareContent");
+      compareContent.innerHTML = `
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Mortgage 1</th>
+              <th>Mortgage 2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Home Price</td>
+              <td>${formatCurrency(opt1.homePrice)}</td>
+              <td>${formatCurrency(opt2.homePrice)}</td>
+            </tr>
+            <tr>
+              <td>Down Payment</td>
+              <td>${formatCurrency(opt1.downPayment)}</td>
+              <td>${formatCurrency(opt2.downPayment)}</td>
+            </tr>
+            <tr>
+              <td>Loan Amount</td>
+              <td>${formatCurrency(opt1.loanAmount)}</td>
+              <td>${formatCurrency(opt2.loanAmount)}</td>
+            </tr>
+            <tr>
+              <td>Interest Rate (%)</td>
+              <td>${opt1.interestRate.toFixed(2)}%</td>
+              <td>${opt2.interestRate.toFixed(2)}%</td>
+            </tr>
+            <tr>
+              <td>Amortization (Years)</td>
+              <td>${opt1.amortization}</td>
+              <td>${opt2.amortization}</td>
+            </tr>
+            <tr>
+              <td>Monthly Payment</td>
+              <td>${formatCurrency(opt1.monthlyPayment)}</td>
+              <td>${formatCurrency(opt2.monthlyPayment)}</td>
+            </tr>
+            <tr>
+              <td>Total Payment</td>
+              <td>${formatCurrency(opt1.totalPayment)}</td>
+              <td>${formatCurrency(opt2.totalPayment)}</td>
+            </tr>
+            <tr>
+              <td>Total Interest</td>
+              <td>${formatCurrency(opt1.totalInterest)}</td>
+              <td>${formatCurrency(opt2.totalInterest)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+      // Show the comparison modal
+      var compareModal = new bootstrap.Modal(document.getElementById('compareModal'));
+      compareModal.show();
     }
   </script>
 </body>
