@@ -9,3 +9,4 @@ Run them using Node's built in test runner:
 ```bash
 npm test
 ```
+Tests also run automatically via GitHub Actions when pushing or opening pull requests against `main`.
